@@ -19,3 +19,6 @@ s3upload --profile="myprofile" s3://mybucket/key file
 `source` can be a file or a folder.
 
 `destination` is the 'virtual folder' (key prefix) the file will be uploaded under.
+
+### docs
+* https://godoc.org/github.com/mitchellh/goamz/s3
