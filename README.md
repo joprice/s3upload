@@ -2,6 +2,8 @@
 
 ### building
 
+First [go get godep](go get github.com/tools/godep). Use `godep go install` to build.
+
 To build for linux, see [the go docs](https://golang.org/doc/install/source) for building go for other architectures, then run
 
 ```bash
