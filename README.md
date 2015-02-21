@@ -13,7 +13,7 @@ To build for linux, see [the go docs](https://golang.org/doc/install/source) for
 ### usage
 
 ```bash
-s3upload --bucketName "mybucket" --profile="myprofile" source destination
+s3upload --profile="myprofile" s3://mybucket/key file
 ```
 
 `source` can be a file or a folder.

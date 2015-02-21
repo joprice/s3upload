@@ -24,6 +24,10 @@ type options struct {
 	dryRun     bool
 }
 
+const (
+	s3Prefix = "s3://"
+)
+
 // Uploads a folder to an s3 bucket
 // export AWS_PROFILE or use --profile flag to use specific profile. aws credentials or access key/secret env variables may also be used.
 func main() {
@@ -47,11 +51,6 @@ func parseOptions() options {
 	profile := flag.String("profile", "", "aws profile")
 	dryRun := flag.Bool("dry-run", false, "Outputs a description of the operations that will be run. Lists remote keys in when downloading.")
 
-	//TODO: determine this and bucket name instead from which argument starts with s3://
-	up := flag.Bool("up", false, "upload")
-	down := flag.Bool("down", false, "download")
-	bucketName := requiredArg("bucket", "", "bucket to upload to")
-
 	// extend default ussage with positional argument descriptions
 	originalUsage := flag.Usage
 	flag.Usage = func() {
@@ -62,31 +61,52 @@ func parseOptions() options {
 
 	flag.Parse()
 
-	if !*up && !*down {
-		fmt.Println("Either --up or --down must be provided")
-		usage()
-	}
-
 	argCount := flag.NArg()
-	if argCount == 0 {
+	if argCount != 2 {
 		usage()
-	}
-
-	src := flag.Arg(0)
-	dest := ""
-	if argCount > 1 {
-		dest = flag.Arg(1)
 	}
 
 	setProfile(profile)
 
+	src, dest, bucketName, upload := validatePaths(flag.Arg(0), flag.Arg(1))
+
 	return options{
-		bucketName: bucketName(),
+		bucketName: bucketName,
 		src:        src,
 		dest:       dest,
-		upload:     *up,
 		dryRun:     *dryRun,
+		upload:     upload,
 	}
+}
+
+func validatePaths(src, dest string) (string, string, string, bool) {
+	srcIsS3 := isS3Uri(src)
+	destIsS3 := isS3Uri(dest)
+	var bucketName string
+	if srcIsS3 != destIsS3 {
+		if srcIsS3 {
+			bucketName, src = parseS3Uri(src)
+			fmt.Println(src, bucketName)
+		} else {
+			bucketName, dest = parseS3Uri(dest)
+			fmt.Println(dest, bucketName)
+		}
+	} else {
+		fmt.Println("either source or destination should begin with the s3 protocol")
+		usage()
+	}
+	return src, dest, bucketName, destIsS3
+}
+
+func isS3Uri(uri string) bool {
+	return strings.HasPrefix(uri, s3Prefix)
+}
+
+func parseS3Uri(path string) (string, string) {
+	parts := strings.Split(strings.TrimPrefix(path, s3Prefix), "/")
+	bucketName := parts[0]
+	key := strings.Join(parts[1:], "/")
+	return bucketName, key
 }
 
 // set env var for profile if flag is present
